@@ -150,6 +150,7 @@ html.dark .toggle-thumb {
   gap: 4px;
   flex-wrap: wrap;
   margin-bottom: -1px;
+  position: relative;
 }
 .tab {
   background: var(--bg-card);
@@ -185,12 +186,21 @@ html.dark .toggle-thumb {
   border: 1px dashed var(--border);
   border-radius: 6px;
   color: var(--text-dim);
-  padding: 7px 13px;
+  /* padding: 7px 13px; */
   font-size: 16px;
   cursor: pointer;
   transition: border-color .2s, color .2s;
   line-height: 1;
   margin-bottom: 1px;
+  position: absolute;
+  right: 0;
+  margin-bottom: 1px;
+  position: absolute;
+  right: 0;
+  width: 40px;
+  height: 23px;
+  top: 0;
+  font-weight: 900;
 }
 .add-tab:hover { border-color: var(--gold); color: var(--gold); }
 
