@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FF14 수익률 계산기</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ── 라이트 (기본) ── */
+:root {
+  --gold:      #9a6e1a;
+  --gold-acc:  #c49840;
+  --bg:        #f5f2ec;
+  --bg-panel:  #ffffff;
+  --bg-card:   #faf8f4;
+  --bg-input:  #f0ede6;
+  --border:    #ddd8ce;
+  --text:      #2a2418;
+  --text-dim:  #8a7e6a;
+  --profit:    #2a7a48;
+  --loss:      #a03030;
+  --profit-bg: rgba(42,122,72,.07);
+  --loss-bg:   rgba(160,48,48,.07);
+}
+
+/* ── 다크 ── */
+html.dark {
+  --gold:      #c9a84c;
+  --gold-acc:  #e8cc80;
+  --bg:        #22242e;
+  --bg-panel:  #2a2d3a;
+  --bg-card:   #303342;
+  --bg-input:  #252830;
+  --border:    #44485e;
+  --text:      #e0e4f0;
+  --text-dim:  #9098b8;
+  --profit:    #5dba7a;
+  --loss:      #c05a5a;
+  --profit-bg: rgba(93,186,122,.10);
+  --loss-bg:   rgba(192,90,90,.10);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans KR', sans-serif;
+  min-height: 100vh;
+  transition: background .25s, color .25s;
+}
+
+/* ── Header ── */
+.header {
+  text-align: center;
+  padding: 32px 20px 20px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.site-title {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(15px, 3.5vw, 22px);
+  color: var(--gold);
+  letter-spacing: 3px;
+}
+.site-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 2px;
+  margin-top: 4px;
+}
+
+/* ── Theme toggle ── */
+.theme-btn {
+  position: absolute;
+  top: 50%; right: 20px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 0;
+}
+.toggle-track {
+  width: 52px; height: 28px;
+  border-radius: 14px;
+  position: relative;
+  transition: background .3s, box-shadow .3s;
+  background: #e8dfc8;
+  border: 1px solid #c9a84c;
+  box-shadow: 0 1px 4px rgba(0,0,0,.12);
+}
+html.dark .toggle-track {
+  background: #1e2340;
+  border: 1px solid #3a4070;
+  box-shadow: 0 2px 8px rgba(0,0,0,.4);
+}
+.toggle-thumb {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.25);
+  transition: transform .3s cubic-bezier(.4,0,.2,1), background .3s;
+  line-height: 1;
+}
+html.dark .toggle-thumb {
+  transform: translateX(24px);
+  background: #1e2340;
+}
+.toggle-label {
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  transition: color .25s;
+}
+.theme-btn:hover .toggle-label { color: var(--gold); }
+@media (max-width: 480px) {
+  .theme-btn { top: 10px; right: 12px; transform: none; }
+  .header { padding-top: 50px; }
+}
+
+/* ── Container ── */
+.container {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+}
+
+/* ── Tab bar ── */
+.tab-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: -1px;
+}
+.tab {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  color: var(--text-dim);
+  padding: 7px 14px;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  transition: color .15s;
+}
+.tab:hover { color: var(--text); }
+.tab.active {
+  background: var(--bg-panel);
+  border-color: var(--gold);
+  border-bottom-color: var(--bg-panel);
+  color: var(--gold);
+  font-weight: 500;
+}
+.tab-x {
+  font-size: 10px;
+  color: var(--text-dim);
+  padding: 1px 3px;
+  border-radius: 3px;
+  transition: background .15s, color .15s;
+}
+.tab:hover .tab-x { background: var(--loss-bg); color: var(--loss); }
+.add-tab {
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--text-dim);
+  padding: 7px 13px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: border-color .2s, color .2s;
+  line-height: 1;
+  margin-bottom: 1px;
+}
+.add-tab:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ── Panel ── */
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--gold);
+  border-radius: 0 6px 6px 6px;
+  padding: 20px;
+}
+
+/* ── Item name input ── */
+.item-name {
+  font-family: 'Cinzel', serif;
+  font-size: clamp(15px, 2.5vw, 20px);
+  color: var(--gold);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  outline: none;
+  padding: 4px 4px 6px;
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 20px;
+  transition: border-color .2s;
+}
+.item-name:focus { border-bottom-color: var(--gold); }
+.item-name::placeholder { color: var(--text-dim); font-family: 'Noto Sans KR'; font-size: 14px; }
+
+/* ── Grid ── */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 620px) { .grid { grid-template-columns: 1fr; } }
+
+/* ── Card ── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.card.full { grid-column: 1 / -1; }
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+.card-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+.add-mat-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-size: 11px;
+  padding: 3px 9px;
+  cursor: pointer;
+  font-family: 'Noto Sans KR', sans-serif;
+  transition: border-color .2s, color .2s;
+}
+.add-mat-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ── Materials table ── */
+.mat-row {
+  display: grid;
+  grid-template-columns: 1fr 96px 34px 34px;
+  border-bottom: 1px solid var(--border);
+}
+.mat-row:last-child { border-bottom: none; }
+.mat-row.hdr { background: var(--bg-input); }
+
+.mat-cell {
+  padding: 7px 10px;
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.mat-cell.right   { justify-content: flex-end; }
+.mat-cell.center  { justify-content: center; }
+.mat-cell.hdr-lbl { font-size: 10px; letter-spacing: .8px; text-transform: uppercase; }
+
+.mat-input {
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  width: 100%;
+}
+.mat-input.num { text-align: right; color: var(--gold); }
+.mat-input::placeholder { color: var(--text-dim); opacity: .5; }
+
+.chk {
+  width: 14px; height: 14px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px;
+  cursor: pointer;
+  color: transparent;
+  background: var(--bg-input);
+  transition: all .15s;
+  user-select: none;
+}
+.chk.on { background: var(--profit-bg); border-color: var(--profit); color: var(--profit); }
+
+.del-btn {
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color .15s;
+}
+.del-btn:hover { color: var(--loss); }
+
+.mat-total {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-top: 1px solid var(--border);
+}
+.mat-total-label { font-size: 11px; color: var(--text-dim); }
+.mat-total-val   { font-size: 14px; font-weight: 700; color: var(--gold); }
+
+/* ── Sell info ── */
+.sell-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.sell-row  { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sell-label { font-size: 12px; color: var(--text-dim); }
+.sell-right { display: flex; align-items: center; gap: 5px; }
+.sell-input {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--gold);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  padding: 5px 9px;
+  text-align: right;
+  outline: none;
+  width: 110px;
+  transition: border-color .2s;
+}
+.sell-input:focus { border-color: var(--gold); }
+.sell-unit { font-size: 11px; color: var(--text-dim); }
+
+.qty-row {
+  display: flex; align-items: center; gap: 7px;
+  padding: 9px 14px;
+  border-top: 1px solid var(--border);
+}
+.qty-label { font-size: 12px; color: var(--text-dim); }
+.qty-btn {
+  width: 26px; height: 26px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 15px;
+  color: var(--text);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .15s, color .15s;
+}
+.qty-btn:hover { border-color: var(--gold); color: var(--gold); }
+.qty-val {
+  min-width: 36px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.sell-summary {
+  border-top: 1px solid var(--border);
+  padding: 9px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sell-sum-row   { display: flex; justify-content: space-between; font-size: 12px; }
+.sell-sum-label { color: var(--text-dim); }
+.sell-sum-val   { color: var(--text); }
+
+/* ── Results ── */
+.results-body {
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 400px) { .results-body { grid-template-columns: 1fr; } }
+
+.res-card {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 10px 12px;
+}
+.res-card.span2  { grid-column: 1 / -1; }
+.res-card.profit { background: var(--profit-bg); border-color: var(--profit); }
+.res-card.loss   { background: var(--loss-bg);   border-color: var(--loss); }
+.res-card.accent { border-color: var(--gold-acc); background: rgba(196,152,64,.06); }
+
+.res-label { font-size: 10px; letter-spacing: .8px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 3px; }
+.res-val   { font-size: clamp(15px, 2.5vw, 20px); font-weight: 700; }
+.res-val.cp { color: var(--profit); }
+.res-val.cl { color: var(--loss); }
+.res-val.cg { color: var(--gold); }
+
+.bar-wrap   { padding: 0 14px 14px; }
+.bar-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-dim); margin-bottom: 4px; }
+.bar-track  { height: 7px; background: var(--bg-input); border-radius: 4px; overflow: hidden; border: 1px solid var(--border); }
+.bar-fill   { height: 100%; border-radius: 4px; transition: width .5s ease, background .3s; }
+.bar-note   { text-align: center; font-size: 10px; color: var(--text-dim); margin-top: 4px; }
+
+.empty { padding: 20px; text-align: center; font-size: 12px; color: var(--text-dim); }
+
+/* 숫자 입력 화살표 제거 */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="site-title">⚔ MARKET BOARD CALCULATOR</div>
+  <div class="site-sub">FINAL FANTASY XIV · 수익률 계산기</div>
+  <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">
+    <div class="toggle-track">
+      <div class="toggle-thumb" id="themeIcon">☀️</div>
+    </div>
+    <span class="toggle-label" id="themeLabel">다크 모드</span>
+  </button>
+</div>
+
+<div class="container">
+  <div class="tab-bar" id="tabBar"></div>
+  <div class="panel"   id="panel"></div>
+</div>
+
+<script>
+// ── 데이터 ────────────────────────────────────────────────────────────────
+const DEFAULT_ITEMS = [{
+  id:1, name:'탕약', qty:3, sellPrice:7380, fee:5,
+  materials:[
+    {id:1, name:'물 클러스터',          price:330,  direct:false},
+    {id:2, name:'번개 클러스터',        price:52,   direct:false},
+    {id:3, name:'이욜라 진액',          price:7390, direct:false},
+    {id:4, name:'대성수',              price:1100, direct:false},
+    {id:5, name:'바람 파슬리',          price:768,  direct:false},
+    {id:6, name:'보라번개 에테르 모래',  price:5600, direct:false},
+  ]
+}];
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem('ff14items');
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch(e) { return null; }
+}
+
+function saveData() {
+  try {
+    localStorage.setItem('ff14items', JSON.stringify({ items, activeId, nextItemId, nextMatId }));
+  } catch(e) {}
+}
+
+const saved = loadData();
+let items       = saved ? saved.items       : DEFAULT_ITEMS;
+let activeId    = saved ? saved.activeId    : 1;
+let nextItemId  = saved ? saved.nextItemId  : 2;
+let nextMatId   = saved ? saved.nextMatId   : 100;
+
+const getItem = id => items.find(i=>i.id===id);
+const active  = ()  => getItem(activeId);
+const fmt     = n   => Math.round(n).toLocaleString('ko-KR');
+const esc     = s   => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+function calc(it) {
+  const matCost  = it.materials.reduce((s,m)=>s+(m.direct?0:m.price),0);
+  const totalSell= it.sellPrice*it.qty;
+  const afterFee = totalSell*(1-it.fee/100);
+  const net      = afterFee-matCost;
+  const perUnit  = it.qty>0 ? net/it.qty : 0;
+  const rate     = matCost>0 ? (net/matCost)*100 : 0;
+  const breakeven= it.qty>0 ? Math.ceil(matCost/it.qty/(1-it.fee/100)) : 0;
+  return {matCost,totalSell,afterFee,net,perUnit,rate,breakeven};
+}
+
+// ── 렌더 ──────────────────────────────────────────────────────────────────
+function renderTabs() {
+  document.getElementById('tabBar').innerHTML =
+    items.map(it=>`
+      <button class="tab ${it.id===activeId?'active':''}" onclick="switchTab(${it.id})">
+        ${esc(it.name)||'(이름 없음)'}
+        <span class="tab-x" onclick="removeItem(event,${it.id})">✕</span>
+      </button>`).join('')+
+    `<button class="add-tab" onclick="addItem()" title="완제품 추가">＋</button>`;
+}
+
+function renderPanel() {
+  const it=active();
+  if(!it){document.getElementById('panel').innerHTML='<div class="empty">완제품을 추가하세요 → 상단 ＋ 버튼</div>';return;}
+  const c=calc(it);
+  const isP=c.net>=0;
+  const barPct=Math.min(Math.max((c.rate+100)/200*100,0),100);
+  const barClr=isP?`hsl(${Math.min(140,90+c.rate*.5)},55%,42%)`:'var(--loss)';
+
+  const matRows=it.materials.map(m=>`
+    <div class="mat-row">
+      <div class="mat-cell">
+        <input class="mat-input" type="text" value="${esc(m.name)}" placeholder="재료명"
+          oninput="updateMat(${it.id},${m.id},'name',this.value)">
+      </div>
+      <div class="mat-cell right">
+        <input class="mat-input num" type="number" value="${m.price}" min="0"
+          oninput="updateMat(${it.id},${m.id},'price',+this.value)">
+      </div>
+      <div class="mat-cell center" onclick="toggleDirect(${it.id},${m.id})" title="직접 수급 (비용 0)">
+        <div class="chk ${m.direct?'on':''}">✔</div>
+      </div>
+      <div class="mat-cell center del-btn" onclick="removeMat(${it.id},${m.id})">✕</div>
+    </div>`).join('');
+
+  document.getElementById('panel').innerHTML=`
+    <input class="item-name" type="text" value="${esc(it.name)}" placeholder="완제품 이름"
+      oninput="updateName(${it.id},this.value)">
+
+    <div class="grid">
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">📦 재료 목록</span>
+          <button class="add-mat-btn" onclick="addMat(${it.id})">+ 재료 추가</button>
+        </div>
+        <div class="mat-row hdr">
+          <div class="mat-cell hdr-lbl">재료명</div>
+          <div class="mat-cell hdr-lbl right">단가 (길)</div>
+          <div class="mat-cell hdr-lbl center" title="직접 수급">수급</div>
+          <div class="mat-cell"></div>
+        </div>
+        ${matRows||'<div class="empty">재료를 추가하세요</div>'}
+        <div class="mat-total">
+          <span class="mat-total-label">총 재료비</span>
+          <span class="mat-total-val">${fmt(c.matCost)} 길</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <span class="card-title">🏪 판매 정보</span>
+        </div>
+        <div class="sell-body">
+          <div class="sell-row">
+            <span class="sell-label">개당 판매가</span>
+            <div class="sell-right">
+              <input class="sell-input" type="number" value="${it.sellPrice}" min="0"
+                oninput="updateField(${it.id},'sellPrice',+this.value)">
+              <span class="sell-unit">길</span>
+            </div>
+          </div>
+          <div class="sell-row">
+            <span class="sell-label">마켓 수수료</span>
+            <div class="sell-right">
+              <input class="sell-input" type="number" value="${it.fee}" min="0" max="100" step="0.1"
+                oninput="updateField(${it.id},'fee',+this.value)">
+              <span class="sell-unit">%</span>
+            </div>
+          </div>
+        </div>
+        <div class="qty-row">
+          <span class="qty-label">제작 수량</span>
+          <button class="qty-btn" onclick="changeQty(${it.id},-1)">−</button>
+          <div class="qty-val">${it.qty}</div>
+          <button class="qty-btn" onclick="changeQty(${it.id},1)">＋</button>
+          <span class="qty-label">개</span>
+        </div>
+        <div class="sell-summary">
+          <div class="sell-sum-row">
+            <span class="sell-sum-label">총 판매가</span>
+            <span class="sell-sum-val">${fmt(c.totalSell)} 길</span>
+          </div>
+          <div class="sell-sum-row">
+            <span class="sell-sum-label">수수료 제외</span>
+            <span class="sell-sum-val">${fmt(c.afterFee)} 길</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card full">
+        <div class="card-head">
+          <span class="card-title">📊 계산 결과</span>
+          <span style="font-size:11px;color:var(--text-dim)">${it.qty}개 기준</span>
+        </div>
+        <div class="results-body">
+          <div class="res-card span2 ${isP?'profit':'loss'}">
+            <div class="res-label">${isP?'총 순이익':'총 손실'}</div>
+            <div class="res-val ${isP?'cp':'cl'}">${isP?'+':''}${fmt(c.net)} 길</div>
+          </div>
+          <div class="res-card">
+            <div class="res-label">개당 순이익</div>
+            <div class="res-val ${isP?'cp':'cl'}" style="font-size:clamp(13px,2vw,17px)">
+              ${isP?'+':''}${fmt(c.perUnit)} 길
+            </div>
+          </div>
+          <div class="res-card accent">
+            <div class="res-label">수익률</div>
+            <div class="res-val ${isP?'cp':'cl'}">${c.rate.toFixed(2)}%</div>
+          </div>
+          <div class="res-card span2">
+            <div class="res-label">손익분기 판매가 (개당)</div>
+            <div class="res-val cg" style="font-size:clamp(13px,2vw,17px)">${fmt(c.breakeven)} 길</div>
+          </div>
+        </div>
+        <div class="bar-wrap">
+          <div class="bar-labels"><span>-100%</span><span>0%</span><span>+100%</span></div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${barPct}%;background:${barClr}"></div>
+          </div>
+          <div class="bar-note">수익률 게이지</div>
+        </div>
+      </div>
+
+    </div>`;
+}
+
+function render(){renderTabs();renderPanel();}
+
+// ── 액션 ──────────────────────────────────────────────────────────────────
+function switchTab(id)       {activeId=id;saveData();render();}
+function updateName(id,v)    {const it=getItem(id);if(it){it.name=v;saveData();renderTabs();}}
+function updateField(id,f,v) {const it=getItem(id);if(it){it[f]=v;saveData();renderPanel();}}
+function changeQty(id,d)     {const it=getItem(id);if(it){it.qty=Math.max(1,it.qty+d);saveData();render();}}
+
+function addItem(){
+  const id=nextItemId++;
+  items.push({id,name:'새 완제품',qty:1,sellPrice:0,fee:5,materials:[]});
+  activeId=id;saveData();render();
+  setTimeout(()=>document.querySelector('.item-name')?.select(),40);
+}
+
+function removeItem(e,id){
+  e.stopPropagation();
+  if(items.length===1){alert('마지막 완제품은 삭제할 수 없습니다.');return;}
+  items=items.filter(i=>i.id!==id);
+  if(activeId===id)activeId=items[0].id;
+  saveData();render();
+}
+
+function addMat(itemId){
+  const it=getItem(itemId);if(!it)return;
+  it.materials.push({id:nextMatId++,name:'재료명',price:0,direct:false});
+  saveData();render();
+  setTimeout(()=>{
+    const ins=document.querySelectorAll('.mat-input:not(.num)');
+    if(ins.length)ins[ins.length-1].select();
+  },40);
+}
+
+function removeMat(itemId,matId){
+  const it=getItem(itemId);
+  if(it){it.materials=it.materials.filter(m=>m.id!==matId);saveData();render();}
+}
+
+function updateMat(itemId,matId,field,val){
+  const it=getItem(itemId);if(!it)return;
+  const m=it.materials.find(m=>m.id===matId);
+  if(m){m[field]=val;saveData();renderPanel();}
+}
+
+function toggleDirect(itemId,matId){
+  const it=getItem(itemId);if(!it)return;
+  const m=it.materials.find(m=>m.id===matId);
+  if(m){m.direct=!m.direct;saveData();render();}
+}
+
+// ── 테마 ──────────────────────────────────────────────────────────────────
+// 기본값: 라이트 (html에 dark 클래스 없음)
+// 다크일 때: html.dark
+
+function applyTheme(isDark){
+  document.documentElement.classList.toggle('dark',isDark);
+  document.getElementById('themeIcon').textContent  = isDark ? '🌙' : '☀️';
+  document.getElementById('themeLabel').textContent = isDark ? '라이트 모드' : '다크 모드';
+}
+
+function toggleTheme(){
+  const isDark=!document.documentElement.classList.contains('dark');
+  applyTheme(isDark);
+  try{localStorage.setItem('ff14theme',isDark?'dark':'light');}catch(e){}
+}
+
+// 초기화: 저장값 없으면 라이트
+(function(){
+  let saved='light';
+  try{saved=localStorage.getItem('ff14theme')||'light';}catch(e){}
+  applyTheme(saved==='dark');
+})();
+
+render();
+</script>
+</body>
+</html>
