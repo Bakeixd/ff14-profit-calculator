@@ -4,8 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FF14 수익률 계산기</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
+  @font-face {
+  font-family: 'TmoneyRoundWind';
+  src: url('./TmoneyRoundWindRegular.ttf') format('truetype');
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'TmoneyRoundWind';
+  src: url('./TmoneyRoundWindExtraBold.ttf') format('truetype');
+  font-weight: 800;
+}
 /* ── 라이트 (기본) ── */
 :root {
   --gold:      #9a6e1a;
@@ -45,7 +55,7 @@ html.dark {
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: 'Noto Sans KR', sans-serif;
+  font-family: 'TmoneyRoundWind', sans-serif;
   min-height: 100vh;
   transition: background .25s, color .25s;
 }
@@ -58,7 +68,7 @@ body {
   position: relative;
 }
 .site-title {
-  font-family: 'Cinzel', serif;
+  font-family: 'TmoneyRoundWind', sans-serif;
   font-size: clamp(15px, 3.5vw, 22px);
   color: var(--gold);
   letter-spacing: 3px;
@@ -194,7 +204,7 @@ html.dark .toggle-thumb {
 
 /* ── Item name input ── */
 .item-name {
-  font-family: 'Cinzel', serif;
+  font-family: 'TmoneyRoundWind', sans-serif;
   font-size: clamp(15px, 2.5vw, 20px);
   color: var(--gold);
   background: transparent;
@@ -425,7 +435,7 @@ input[type=number] { -moz-appearance: textfield; }
 <body>
 
 <div class="header">
-  <div class="site-title">⚔ MARKET BOARD CALCULATOR</div>
+  <div class="site-title">MARKET BOARD CALCULATOR</div>
   <div class="site-sub">FINAL FANTASY XIV · 수익률 계산기</div>
   <button class="theme-btn" onclick="toggleTheme()" id="themeBtn">
     <div class="toggle-track">
